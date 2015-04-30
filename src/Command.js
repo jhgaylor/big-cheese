@@ -7,24 +7,15 @@ var Command = function (data_sources, buildFn) {
   // the data_source key will be undefined is the lookup failed
   function getDataSourceGetters () {
     var source_promise_getters = {};
-    data_sources.forEach(function (source_key) {
-      var keys = source_key.split('.');
-      var location = DataSources;
-      // dig through nested objects where source_key is of the form "a.b.c"
-      keys.forEach(function (key) {
-        if (location) {
-          if (key in location) {
-            location = location[key]
-            return;
-          }
-        } else {
-          // if any key isn't found in location, the DataSource doesn't exist
-          console.log("could not find the next key", source_key, key, location)
-          return;
-        }
-      })
+    data_source_keys.forEach(function (source_key) {
+      source = selectn(source_key, DataSources)
+      if (source === null) {
+        // there is not a datasource for this location
+        console.log("Could not find datasource at location ", source_key);
+        return;
+      }
       // set the value to the promise getter
-      source_promise_getters[source_key] = location.get;
+      source_promise_getters[source_key] = source.get;
     });
     return source_promise_getters;
   }
