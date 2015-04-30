@@ -1,5 +1,4 @@
-var _ = require('underscore');
-var DataSources = require('./DataSources');
+var selectn = require('selectn');
 
 // TODO: DataSources should really not need to always be passed in here.
 //   Instead, there should be a "Commander" with which DataSources are register.
