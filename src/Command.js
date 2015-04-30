@@ -1,7 +1,9 @@
 var _ = require('underscore');
 var DataSources = require('./DataSources');
 
-var Command = function (data_sources, buildFn) {
+// TODO: DataSources should really not need to always be passed in here.
+//   Instead, there should be a "Commander" with which DataSources are register.
+var Command = function (DataSource, data_source_keys, buildFn) {
   // returns a hashtable of data_source keys w/ a promise for its data
   // accounts for 'keys.like.this' for {keys:{like:{this: new DataSource()}}}
   // the data_source key will be undefined is the lookup failed
