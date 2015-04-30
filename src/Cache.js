@@ -1,6 +1,9 @@
 var redis = require('redis');
 var Q = require('q');
-var url = require('url');
+
+var REDIS_HOST = process.env.BIG_CHEESE_REDIS_HOST || "127.0.0.1";
+var REDIS_PORT = process.env.BIG_CHEESE_REDIS_PORT || 6379;
+var REDIS_PASSWORD = process.env.BIG_CHEESE_REDIS_PASSWORD || null;
 // A function that returns a cache object. Each cache object
 // has an open connection to the cache server.
 // All the methods of the cache objects return a promise
@@ -8,11 +11,7 @@ var url = require('url');
 var Cache = function () {
   // the redis handle is private.
   var CacheClient = (function () {
-    // tcp://ip:port
-    var redis_info = url.parse(process.env.REDIS_PORT || "");
-    var REDIS_PORT = redis_info && redis_info.port || 6379;
-    var REDIS_HOST = redis_info && redis_info.hostname || '127.0.0.1';
-    // TODO: grab options from env vars (I don't need to pass any right now but others might.)
+    // TODO: use password to auth
     var client = redis.createClient(REDIS_PORT, REDIS_HOST, {});
     client.on("error", function (err) {
       console.log("Redis client threw error: ", err)
