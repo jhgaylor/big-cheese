@@ -1,20 +1,27 @@
 var Q = require('q');
+var noop = function () {};
 
-// getterFns promises should resolve to a POJO so it can be json serialized.
-//   the job of the getterFns is to make IO calls and process the results
-//   into a data structure that gets cached and used by the commands' buildFns
-//   to process into responses
-function DataSource (name, timeout, cache, getterFn, keyFn) {
+// basic namespaced json serializer
+var defaultKeyFn = function (name, opts) {
+  // the name param is passed because w/o it a passed in function
+  // wouldn't have access to it.
+  optsStr = JSON.stringify(opts);
+  return "datasource:"+[name, optsStr].join("-");
+};
+
+function DataSource (name, options) {
+  // TODO: determine the proper default value, 0 or null
+  var timeout = options.timeout || 0;
+  // getterFns promises should resolve to a POJO so it can be json serialized.
+  //   the job of the getterFns is to make IO calls and process the results
+  //   into a data structure that gets cached and used by the commands' buildFns
+  //   to process into responses
+  var getterFn = options.getterFn || noop;
   // Returns the key for this data source, which is built from it's name
   // `opts` allow for a single named data source's results to be
   // cached once per set of arguments it is called with.
   // The default keyFn is a basic JSON serializer
-  keyFn = keyFn || function (name, opts) {
-    // the name param is passed because w/o it a passed in function
-    // wouldn't have access to it.
-    optsStr = JSON.stringify(opts);
-    return "datasource:"+[name, optsStr].join("-");
-  };
+  var keyFn = options.keyFn || defaultKeyFn;
 
   var dataDeferred;
   return {
