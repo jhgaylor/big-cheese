@@ -1,5 +1,8 @@
+// Instantiate the cache and connect to redis. by doing it here instead of
+// in the "constructor" we will use only a single redis connection.
+// TODO: look into the performance implications of a single redis connection versus many.
+var cache = require('./Cache')();
 var Q = require('q');
-var noop = function () {};
 
 // basic namespaced json serializer
 var defaultKeyFn = function (name, opts) {
@@ -9,22 +12,31 @@ var defaultKeyFn = function (name, opts) {
   return "datasource:"+[name, optsStr].join("-");
 };
 
-function DataSource (name, options) {
-  // TODO: determine the proper default value, 0 or null
-  var timeout = options.timeout || 0;
-  // getterFns promises should resolve to a POJO so it can be json serialized.
-  //   the job of the getterFns is to make IO calls and process the results
-  //   into a data structure that gets cached and used by the commands' buildFns
-  //   to process into responses
-  var getterFn = options.getterFn || noop;
+// DataSource(name, [timeout,] getterFn)
+// this signature is easier for consumers of the api than DataSource(name, options)
+function DataSource (name, timeout, getterFn, keyFn) {
+  // allows for the optional exclusion of the timeout parameter.
+  if (getterFn === null) {
+    // getterFns promises should resolve to a POJO so it can be json serialized.
+    // the job of the getterFns is to make IO calls and process the results
+    // into a data structure that gets cached and used by the commands' buildFns
+    // to process into responses. defaults to a noop
+    getterFn = timeout || function () {};
+    // TODO: determine the proper default value, 0 or null
+    timeout = 0;
+  }
   // Returns the key for this data source, which is built from it's name
-  // `opts` allow for a single named data source's results to be
-  // cached once per set of arguments it is called with.
+  // and `opts` which allows for a single named data source's results to be
+  // namespaced and cached once per set of arguments it is called with
   // The default keyFn is a basic JSON serializer
-  var keyFn = options.keyFn || defaultKeyFn;
+  keyFn = keyFn || defaultKeyFn;
 
+  // a reference to the deferred that has a lifespan longer than the call
+  // to get.
   var dataDeferred;
   return {
+    // ease of life for developers
+    name: name,
     // always returns a promise
     // the promise will resolve w/ data or reject with an http or redis err
     // if it is called again before the promise resolves, it returns
@@ -37,7 +49,8 @@ function DataSource (name, options) {
       // don't overwrite the promise while it's being fulfilled
       if ((dataDeferred === undefined) || (!dataDeferred.promise.isPending())) {
         dataDeferred = Q.defer()
-        cache.get(key).then(function (data) {
+        // this will get the value one way or another!
+        cache.get(key, getterFn, opts).then(function (data) {
           if (data) {
             console.log("cache hit", key);
             dataDeferred.resolve(JSON.parse(data))
