@@ -7,10 +7,6 @@ NPM package to expose the glories of DataSources and Commands.
 
 create a kue task for a job to be done that will get the necessary data if it isn't in the cache
 
-### kue
-
-allows for prioritizing, rate limiting, and scaling the fulfillment of jobs.
-
 ## command
 
 aggregate datasource promises and make them available in a command that will mix/match the data and return a promise for the aggregate result. (note: does it need to be a promise? should it be?)
